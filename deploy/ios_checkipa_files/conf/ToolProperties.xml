@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<appvet:Tool xmlns:appvet="http://appvet.github.io/appvet/schemas"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://appvet.github.io/appvet/schemas ToolProperties.xsd ">
+	<appvet:Name>iOS-checkIPA</appvet:Name>
+	<appvet:Version>1.0</appvet:Version>
+	<appvet:ServiceURL>http://127.0.0.1:8080/report_resources</appvet:ServiceURL>
+	<appvet:AppVetProtocol>ASYNCHRONOUS</appvet:AppVetProtocol>
+	<appvet:AppOs>ANDROID</appvet:AppOs>
+	<appvet:Command>checkipa -i [APP_FILE_PATH]</appvet:Command>
+	<appvet:CommandTimeout>120000</appvet:CommandTimeout>
+	<appvet:Logging>
+		<appvet:Level>DEBUG</appvet:Level>
+		<appvet:ToConsole>true</appvet:ToConsole>
+		<appvet:LogName>log.txt</appvet:LogName>
+	</appvet:Logging>
+
+	<appvet:Report>
+		<appvet:Format>HTML</appvet:Format>
+		<appvet:Result>
+			<appvet:DefaultStatus>LOW</appvet:DefaultStatus>
+
+			<!-- iOS-checkIPA output substrings for moderate issues -->
+			<appvet:Moderate>not enabled</appvet:Moderate>
+			<appvet:Moderate>aps-environment key is not set</appvet:Moderate>
+			<appvet:Moderate>value is set to YES; should be NO</appvet:Moderate>			
+			<appvet:Moderate>is rapidly approaching</appvet:Moderate>	
+
+			<!-- The following are iOS-checkIPA ERRORS but are re-classified for AppVet as WARNINGs -->
+			<appvet:Moderate>embedded.mobileprovision file not found in IPA</appvet:Moderate>	
+			<appvet:Moderate>unable to parse embedded.mobileprovision file</appvet:Moderate>	
+			<appvet:Moderate>Payload folder is misnamed 'payload'</appvet:Moderate>	
+			<appvet:Moderate>Info.plist file not found in IPA</appvet:Moderate>	
+			<appvet:Moderate>not found</appvet:Moderate>	
+			<appvet:Moderate>no matching devices found</appvet:Moderate>	
+			<appvet:Moderate>no provisioned devices in this app</appvet:Moderate>	
+			<appvet:Moderate>no provisioned devices in this app</appvet:Moderate>	
+			<appvet:Moderate>no provisioned devices in this app</appvet:Moderate>	
+			<appvet:Moderate>no provisioned devices in this app</appvet:Moderate>	
+
+			<!-- iOS-checkIPA output substrings for high issues -->
+			<appvet:High>Info.plist file is not accessable</appvet:High>
+			<appvet:High>not located or accessable</appvet:High>
+			<appvet:High>does not exist</appvet:High>
+			<appvet:High>has a problem</appvet:High>
+			<appvet:High>formatted incorrectly</appvet:High>
+			<appvet:High>does not match AppID</appvet:High>
+			<appvet:High>does not match the BundleID</appvet:High>
+			<appvet:High>not Enterprise and no provisioned devices</appvet:High>
+			<appvet:High>development profile not found</appvet:High>
+			<appvet:High>no distribution profile found</appvet:High>
+			<appvet:High>is in the past</appvet:High>
+
+			<!-- iOS-checkIPA errors (see above warnings)-->
+
+
+
+		</appvet:Result>
+	</appvet:Report>
+
+
+	<appvet:AppVet>
+		<appvet:URL>http://127.0.0.1:8080/appvet/AppVetServlet</appvet:URL>
+		<appvet:Method>POST</appvet:Method>
+		<appvet:ToolId>checkipa</appvet:ToolId>
+		<appvet:Username>checkipa</appvet:Username>
+		<appvet:Password>mypassword123</appvet:Password>
+	</appvet:AppVet>
+</appvet:Tool>

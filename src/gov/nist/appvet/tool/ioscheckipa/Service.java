@@ -53,7 +53,6 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
  * This class implements a synchronous tool service.
  */
 public class Service extends HttpServlet {
-
 	private static final long serialVersionUID = 1L;
 	private static final String reportName = "report";
 	private static final Logger log = Properties.log;
@@ -64,7 +63,6 @@ public class Service extends HttpServlet {
 	private String appId = null;
 	private StringBuffer reportBuffer = null;
 	private String command = null;
-
 
 	/** CHANGE (START): Add expected HTTP request parameters **/
 	/** CHANGE (END): Add expected HTTP request parameters **/
@@ -77,7 +75,6 @@ public class Service extends HttpServlet {
 	 * doGet(HttpServletRequest request, HttpServletResponse response) throws
 	 * ServletException, IOException {
 	 */
-
 	protected void doPost(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		// Get received HTTP parameters and file upload
@@ -85,17 +82,14 @@ public class Service extends HttpServlet {
 		ServletFileUpload upload = new ServletFileUpload(factory);
 		List items = null;
 		FileItem fileItem = null;
-
 		try {
 			items = upload.parseRequest(request);
 		} catch (FileUploadException e) {
 			e.printStackTrace();
 		}
-
 		// Get received items
 		Iterator iter = items.iterator();
 		FileItem item = null;
-
 		while (iter.hasNext()) {
 			item = (FileItem) iter.next();
 			if (item.isFormField()) {
@@ -115,34 +109,29 @@ public class Service extends HttpServlet {
 				}
 			}
 		}
-
 		if (appId == null) {
 			// All tool services require an AppVet app ID
 			HttpUtil.sendHttp400(response, "No app ID specified");
 			return;
 		}
-
 		if (fileItem != null) {
 			// Get app file
 			fileName = FileUtil.getFileName(fileItem.getName());
-			if (!fileName.endsWith(".apk")) {
+			if (!fileName.endsWith(".ipa")) {
 				HttpUtil.sendHttp400(response,
 						"Invalid app file: " + fileItem.getName());
 				return;
 			}
-
 			// Create app directory
 			appDirPath = Properties.TEMP_DIR + "/" + appId;
 			File appDir = new File(appDirPath);
 			if (!appDir.exists()) {
 				appDir.mkdir();
 			}
-
 			// Create report path
 			reportFilePath = Properties.TEMP_DIR + "/" + appId + "/"
 					+ reportName + "." + Properties.reportFormat.toLowerCase();
 			appFilePath = Properties.TEMP_DIR + "/" + appId + "/" + fileName;
-
 			if (!FileUtil.saveFileUpload(fileItem, appFilePath)) {
 				HttpUtil.sendHttp500(response, "Could not save uploaded file");
 				return;
@@ -151,29 +140,24 @@ public class Service extends HttpServlet {
 			HttpUtil.sendHttp400(response, "No app was received.");
 			return;
 		}
-
 		// Use if reading command from ToolProperties.xml. Otherwise,
 		// comment-out if using custom command (called by customExecute())
 		// command = getCommand();
 		reportBuffer = new StringBuffer();
-
 		// If asynchronous, send acknowledgement back to AppVet so AppVet
 		// won't block waiting for a response.
 		if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 			HttpUtil.sendHttp202(response, "Received app " + appId
 					+ " for processing.");
 		}
-
 		/*
 		 * CHANGE: Select either execute() to execute a native OS command or
 		 * customExecute() to execute your own custom code. Make sure that the
 		 * unused method call is commented-out.
 		 */
 		command = getCommand();
-		
 		boolean succeeded = execute(command, reportBuffer);
-		//boolean succeeded = customExecute(reportBuffer);
-
+		// boolean succeeded = customExecute(reportBuffer);
 		if (!succeeded) {
 			log.error("Error detected: " + reportBuffer.toString());
 			String errorReport = ReportUtil
@@ -200,14 +184,11 @@ public class Service extends HttpServlet {
 			}
 			return;
 		}
-
 		// Analyze report and generate tool status
 		log.debug("Analyzing report for " + appFilePath);
-		ToolStatus reportStatus = ReportUtil.analyzeReport(reportBuffer
-				.toString());
+		ToolStatus reportStatus = analyzeReport(reportBuffer.toString());
 		log.debug("Result: " + reportStatus.name());
 		String reportContent = null;
-
 		// Get report
 		if (Properties.reportFormat.equals(ReportFormat.HTML.name())) {
 			reportContent = ReportUtil
@@ -216,9 +197,9 @@ public class Service extends HttpServlet {
 							fileName,
 							reportStatus,
 							reportBuffer.toString(),
-							"Description: \tApp does not contain Android MasterKey or ExtraField vulnerabilities.\n\n",
-							null,
-							"Description: \tApp contains Android MasterKey and/or ExtraField vulnerabilities.\n\n",
+							"Description: \tApp does not contain moderate or high severity issues.\n\n",
+							"Description: \tApp contains one or more moderate-severity issues.\n\n",
+							"Description: \tApp contains one or more high-severity issues.\n\n",
 							"Description: \tError or exception processing app.\n\n");
 		} else if (Properties.reportFormat.equals(ReportFormat.TXT.name())) {
 			reportContent = getTxtReport();
@@ -227,18 +208,16 @@ public class Service extends HttpServlet {
 		} else if (Properties.reportFormat.equals(ReportFormat.JSON.name())) {
 			reportContent = getJsonReport();
 		}
-
 		// If report content is null or empty, stop processing
 		if (reportContent == null || reportContent.isEmpty()) {
 			log.error("Tool report is null or empty");
 			return;
 		}
-
 		// Send report to AppVet
 		if (Properties.protocol.equals(Protocol.SYNCHRONOUS.name())) {
 			// Send back ASCII in HTTP Response
 			ReportUtil
-			.sendInHttpResponse(response, reportContent, reportStatus);
+					.sendInHttpResponse(response, reportContent, reportStatus);
 		} else if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 			// Send report file in new HTTP Request to AppVet
 			if (FileUtil.saveReport(reportContent, reportFilePath)) {
@@ -246,7 +225,6 @@ public class Service extends HttpServlet {
 						reportStatus);
 			}
 		}
-
 		// Clean up
 		if (!Properties.keepApps) {
 			if (FileUtil.deleteDirectory(new File(appDirPath))) {
@@ -255,13 +233,55 @@ public class Service extends HttpServlet {
 				log.warn("Could not delete " + appFilePath);
 			}
 		}
-
 		reportBuffer = null;
-
 		// Clean up
 		System.gc();
 	}
-	
+
+	public static ToolStatus analyzeReport(String report) {
+		if (report == null || report.isEmpty()) {
+			log.error("Report is null or empty.");
+			return ToolStatus.ERROR;
+		}
+		// Scan file for result strings defined in configuration file. Here,
+		// we always scan in this order: ERRORs, HIGHs, MODERATEs, and LOWs.
+		if (Properties.errorResults != null
+				&& !Properties.errorResults.isEmpty()) {
+			for (String s : Properties.errorResults) {
+				if (report.indexOf(s) > -1) {
+					log.debug("Error message: " + s);
+					return ToolStatus.ERROR;
+				}
+			}
+		}
+		if (Properties.highResults != null && !Properties.highResults.isEmpty()) {
+			for (String s : Properties.highResults) {
+				if (report.indexOf(s) > -1) {
+					log.debug("High message: " + s);
+					return ToolStatus.HIGH;
+				}
+			}
+		}
+		if (Properties.moderateResults != null
+				&& !Properties.moderateResults.isEmpty()) {
+			for (String s : Properties.moderateResults) {
+				if (report.indexOf(s) > -1) {
+					log.debug("Moderate message: " + s);
+					return ToolStatus.MODERATE;
+				}
+			}
+		}
+		if (Properties.lowResults != null && !Properties.lowResults.isEmpty()) {
+			for (String s : Properties.lowResults) {
+				if (report.indexOf(s) > -1) {
+					log.debug("Low message: " + s);
+					return ToolStatus.LOW;
+				}
+			}
+		}
+		return Properties.defaultStatus;
+	}
+
 	public String getCommand() {
 		// Get command from ToolProperties.xml file
 		String cmd1 = Properties.command;
@@ -272,7 +292,6 @@ public class Service extends HttpServlet {
 		} else {
 			cmd2 = cmd1;
 		}
-
 		log.debug("full command: " + cmd2);
 		return cmd2;
 	}
@@ -357,32 +376,31 @@ public class Service extends HttpServlet {
 			}
 		}
 	}
-	
+
 	private static class IOThreadHandler extends Thread {
 		private InputStream inputStream;
 		private StringBuffer output = new StringBuffer();
 		private static final String lineSeparator = System
 				.getProperty("line.separator");;
 
-				IOThreadHandler(InputStream inputStream) {
-					this.inputStream = inputStream;
-				}
+		IOThreadHandler(InputStream inputStream) {
+			this.inputStream = inputStream;
+		}
 
-				public void run() {
-					Scanner br = null;
+		public void run() {
+			Scanner br = null;
+			br = new Scanner(new InputStreamReader(inputStream));
+			String line = null;
+			while (br.hasNextLine()) {
+				line = br.nextLine();
+				output.append(line + lineSeparator);
+			}
+			br.close();
+		}
 
-					br = new Scanner(new InputStreamReader(inputStream));
-					String line = null;
-					while (br.hasNextLine()) {
-						line = br.nextLine();
-						output.append(line + lineSeparator);
-					}
-					br.close();
-				}
-
-				public StringBuffer getOutput() {
-					return output;
-				}
+		public StringBuffer getOutput() {
+			return output;
+		}
 	}
 
 	// TODO
@@ -399,5 +417,4 @@ public class Service extends HttpServlet {
 	public String getJsonReport() {
 		return null;
 	}
-
 }
