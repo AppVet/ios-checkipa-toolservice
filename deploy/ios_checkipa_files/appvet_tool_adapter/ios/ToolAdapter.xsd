@@ -97,7 +97,10 @@
 			<xs:element name="AppSubmit" maxOccurs="1" minOccurs="1"
 				type="AppSubmitType">
 			</xs:element>
-			<xs:element name="Restriction" type="RestrictionType" maxOccurs="1" minOccurs="1"></xs:element>
+			<xs:element name="Restriction" type="RestrictionType"
+				maxOccurs="1" minOccurs="1">
+			</xs:element>
+			<xs:element name="SpecialAccessRequired" type="xs:boolean" maxOccurs="1" minOccurs="1"></xs:element>
 			<xs:element name="AuthenticationRequired" type="xs:boolean"
 				maxOccurs="1" minOccurs="1">
 			</xs:element>

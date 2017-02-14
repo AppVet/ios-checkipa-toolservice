@@ -82,11 +82,13 @@ public class Service extends HttpServlet {
 		ServletFileUpload upload = new ServletFileUpload(factory);
 		List items = null;
 		FileItem fileItem = null;
+
 		try {
 			items = upload.parseRequest(request);
 		} catch (FileUploadException e) {
 			e.printStackTrace();
 		}
+
 		// Get received items
 		Iterator iter = items.iterator();
 		FileItem item = null;
@@ -109,6 +111,7 @@ public class Service extends HttpServlet {
 				}
 			}
 		}
+
 		if (appId == null) {
 			// All tool services require an AppVet app ID
 			HttpUtil.sendHttp400(response, "No app ID specified");
@@ -140,6 +143,7 @@ public class Service extends HttpServlet {
 			HttpUtil.sendHttp400(response, "No app was received.");
 			return;
 		}
+
 		// Use if reading command from ToolProperties.xml. Otherwise,
 		// comment-out if using custom command (called by customExecute())
 		// command = getCommand();
@@ -284,7 +288,7 @@ public class Service extends HttpServlet {
 
 	public String getCommand() {
 		// Get command from ToolProperties.xml file
-		String cmd1 = Properties.command;
+		String cmd1 = Properties.IOS_CHECKIPA_FILES_HOME + "/bin/" + Properties.command;
 		String cmd2 = null;
 		if (cmd1.indexOf(Properties.APP_FILE_PATH) > -1) {
 			// Add app file path
@@ -313,9 +317,12 @@ public class Service extends HttpServlet {
 			outputHandler = new IOThreadHandler(process.getInputStream());
 			outputHandler.start();
 			errorHandler = new IOThreadHandler(process.getErrorStream());
+
 			errorHandler.start();
+
 			if (process.waitFor(Properties.commandTimeout,
 					TimeUnit.MILLISECONDS)) {
+
 				// Process has waited and exited within the timeout
 				exitValue = process.exitValue();
 				if (exitValue == 0) {
@@ -334,6 +341,7 @@ public class Service extends HttpServlet {
 					return false;
 				}
 			} else {
+
 				// Process exceed timeout or was interrupted
 				log.error("Command timed-out or was interrupted: \n"
 						+ outputHandler.getOutput() + "\nErrors: "

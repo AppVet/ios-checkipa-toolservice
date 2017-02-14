@@ -11,6 +11,7 @@
 		<appvet:VendorWebsite>https://github.com/apperian/iOS-checkIPA</appvet:VendorWebsite>
 		<appvet:AppSubmit>APP_FILE</appvet:AppSubmit>
 		<appvet:Restriction>NONE</appvet:Restriction>
+		<appvet:SpecialAccessRequired>false</appvet:SpecialAccessRequired>
 		<appvet:AuthenticationRequired>false</appvet:AuthenticationRequired>
 		<appvet:ReportFile>HTML</appvet:ReportFile>
 	</appvet:Description>

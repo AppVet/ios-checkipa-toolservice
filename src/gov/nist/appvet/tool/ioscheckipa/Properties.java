@@ -83,6 +83,7 @@ public class Properties {
 	//System.out.println("*** Starting iOS CheckIPA Service v" + version
 	//	+ " ***");
 //	String toolOS = System.getProperty("os.name");
+
 	JAVA_HOME = System.getenv("JAVA_HOME");
 	if (JAVA_HOME == null) {
 	    System.err.println("Environment variable JAVA_HOME not set.");
@@ -102,6 +103,7 @@ public class Properties {
 	/* CHANGE (END): Check if tool exists */
 
 	TEMP_DIR = IOS_CHECKIPA_FILES_HOME + "/apps";
+
 	File tempDir = new File(TEMP_DIR);
 	if (!tempDir.exists()) {
 	    tempDir.mkdirs();
@@ -119,6 +121,7 @@ public class Properties {
 	if (!configFile.exists()) {
 	    System.err.println("Configuration file does not exist.");
 	}
+
 	final Xml xml = new Xml(configFile);
 
 	// Do Logging first so we can use log below
@@ -197,5 +200,6 @@ public class Properties {
 	LogMaintainer logMaintainer = new LogMaintainer();
 	Thread thread = new Thread(logMaintainer);
 	thread.start();
+	
     }
 }
