@@ -144,7 +144,12 @@ public class ReportUtil {
 	htmlBuffer.append("</table>\n");
 	htmlBuffer.append("<br>\n");
 	
+	
+	
 	// Content
+	String apperianLogo = "../appvet_images/apperian.png";
+	htmlBuffer.append("<img src=\"" + apperianLogo + "\" alt=\"Apparian\" height=\"75\">\n");
+	htmlBuffer.append("<br>\n");
 	htmlBuffer.append("<h3>" + Properties.toolName + "</h3>\n");
 	htmlBuffer.append("<pre>\n");
 	htmlBuffer.append("File: \t\t" + fileName + "\n");
