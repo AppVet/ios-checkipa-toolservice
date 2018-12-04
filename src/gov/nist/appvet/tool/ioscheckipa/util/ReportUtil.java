@@ -43,144 +43,162 @@ import gov.nist.appvet.tool.ioscheckipa.Properties;
 
 public class ReportUtil {
 
-    private static final Logger log = Properties.log;
+	private static final Logger log = Properties.log;
 
-
-
-    /**
-     * This method returns report information to the AppVet ToolAdapter as ASCII
-     * text and cannot attach a file to the response.
-     */
-    public static boolean sendInHttpResponse(HttpServletResponse response,
-	    String reportText, ToolStatus reportStatus) {
-	try {
-	    response.setStatus(HttpServletResponse.SC_OK); // HTTP 200
-	    response.setContentType("text/html");
-	    response.setHeader("toolrisk", reportStatus.name());
-	    PrintWriter out = response.getWriter();
-	    out.println(reportText);
-	    out.flush();
-	    out.close();
-	    log.debug("Returned report");
-	    return true;
-	} catch (IOException e) {
-	    log.error(e.toString());
-	    return false;
+	/**
+	 * This method returns report information to the AppVet ToolAdapter as ASCII
+	 * text and cannot attach a file to the response.
+	 */
+	public static boolean sendInHttpResponse(HttpServletResponse response,
+			String reportText, ToolStatus reportStatus) {
+		try {
+			response.setStatus(HttpServletResponse.SC_OK); // HTTP 200
+			response.setContentType("text/html");
+			response.setHeader("toolrisk", reportStatus.name());
+			PrintWriter out = response.getWriter();
+			out.println(reportText);
+			out.flush();
+			out.close();
+			log.debug("Returned report");
+			return true;
+		} catch (IOException e) {
+			log.error(e.toString());
+			return false;
+		}
 	}
-    }
 
-    /** This method should be used for sending files back to AppVet. */
-    public static boolean sendInNewHttpRequest(String appId,
-	    String reportFilePath, ToolStatus reportStatus) {
-	HttpParams httpParameters = new BasicHttpParams();
-	HttpConnectionParams.setConnectionTimeout(httpParameters, 30000);
-	HttpConnectionParams.setSoTimeout(httpParameters, 1200000);
-	HttpClient httpClient = new DefaultHttpClient(httpParameters);
-	httpClient = SSLWrapper.wrapClient(httpClient);
+	/** This method should be used for sending files back to AppVet. */
+	public static boolean sendInNewHttpRequest(String appId,
+			String reportFilePath, ToolStatus reportStatus) {
+		HttpParams httpParameters = new BasicHttpParams();
+		HttpConnectionParams.setConnectionTimeout(httpParameters, 30000);
+		HttpConnectionParams.setSoTimeout(httpParameters, 1200000);
+		HttpClient httpClient = new DefaultHttpClient(httpParameters);
+		httpClient = SSLWrapper.wrapClient(httpClient);
 
-	try {
-	    /*
-	     * To send reports back to AppVet, the following parameters must be
-	     * sent: - command: SUBMIT_REPORT - username: AppVet username -
-	     * password: AppVet password - appid: The app ID - toolid: The ID of
-	     * this tool - toolrisk: The risk assessment (LOW, MODERATE, HIGH,
-	     * ERROR) - report: The report file.
-	     */
-	    MultipartEntity entity = new MultipartEntity();
-	    entity.addPart("command",
-		    new StringBody("SUBMIT_REPORT", Charset.forName("UTF-8")));
-	    entity.addPart("username", new StringBody(
-		    Properties.appvetUsername, Charset.forName("UTF-8")));
-	    entity.addPart("password", new StringBody(
-		    Properties.appvetPassword, Charset.forName("UTF-8")));
-	    entity.addPart("appid",
-		    new StringBody(appId, Charset.forName("UTF-8")));
-	    entity.addPart("toolid",
-		    new StringBody(Properties.toolId, Charset.forName("UTF-8")));
-	    entity.addPart("toolrisk", new StringBody(reportStatus.name(),
-		    Charset.forName("UTF-8")));
-	    File report = new File(reportFilePath);
-	    FileBody fileBody = new FileBody(report);
-	    entity.addPart("file", fileBody);
-	    HttpPost httpPost = new HttpPost(Properties.appvetUrl);
-	    httpPost.setEntity(entity);
-	    // Send the report to AppVet
-	    log.debug("Sending report file to AppVet");
-	    final HttpResponse response = httpClient.execute(httpPost);
-	    log.debug("Received from AppVet: " + response.getStatusLine());
-	    // Clean up
-	    httpPost = null;
-	    return true;
-	} catch (Exception e) {
-	    log.error(e.toString());
-	    return false;
+		try {
+			/*
+			 * To send reports back to AppVet, the following parameters must be
+			 * sent: - command: SUBMIT_REPORT - username: AppVet username -
+			 * password: AppVet password - appid: The app ID - toolid: The ID of
+			 * this tool - toolrisk: The risk assessment (LOW, MODERATE, HIGH,
+			 * ERROR) - report: The report file.
+			 */
+			MultipartEntity entity = new MultipartEntity();
+			entity.addPart("command",
+					new StringBody("SUBMIT_REPORT", Charset.forName("UTF-8")));
+			entity.addPart("username", new StringBody(
+					Properties.appvetUsername, Charset.forName("UTF-8")));
+			entity.addPart("password", new StringBody(
+					Properties.appvetPassword, Charset.forName("UTF-8")));
+			entity.addPart("appid",
+					new StringBody(appId, Charset.forName("UTF-8")));
+			entity.addPart("toolid",
+					new StringBody(Properties.toolId, Charset.forName("UTF-8")));
+			entity.addPart("toolrisk", new StringBody(reportStatus.name(),
+					Charset.forName("UTF-8")));
+			File report = new File(reportFilePath);
+			FileBody fileBody = new FileBody(report);
+			entity.addPart("file", fileBody);
+			HttpPost httpPost = new HttpPost(Properties.appvetUrl);
+			httpPost.setEntity(entity);
+			// Send the report to AppVet
+			log.debug("Sending report file to AppVet");
+			final HttpResponse response = httpClient.execute(httpPost);
+			log.debug("Received from AppVet: " + response.getStatusLine());
+			// Clean up
+			httpPost = null;
+			return true;
+		} catch (Exception e) {
+			log.error(e.toString());
+			return false;
+		}
 	}
-    }
 
-    public static String getHtmlReport(HttpServletResponse response,
-	    String fileName, ToolStatus reportStatus, String report,
-	    String lowDescription, String moderateDescription,
-	    String highDescription, String errorDescription) {
-	StringBuffer htmlBuffer = new StringBuffer();
-	htmlBuffer.append("<HTML>\n");
-	htmlBuffer.append("<head>\n");
-	htmlBuffer.append("<style type=\"text/css\">\n");
-	htmlBuffer.append("h3 {font-family:arial;}\n");
-	htmlBuffer.append("h4 {font-family:arial;}\n");
-	htmlBuffer.append("p {font-family:arial;}\n");
-	htmlBuffer.append("</style>\n");
-	htmlBuffer.append("<title>" + Properties.toolName + "</title>\n");
-	htmlBuffer.append("</head>\n");
-	htmlBuffer.append("<body>\n");
-	
-	// Carwash AppVet banner
-	htmlBuffer.append("<table style=\"background:#015289;width:100%\">\n");
-	htmlBuffer.append("<tr>\n");
-	htmlBuffer.append("<td>\n");
-	String appvetLogo = "../appvet_images/appvet_logo_main.png";
-	htmlBuffer.append("<img src=\"" + appvetLogo + "\" alt=\"Carwash AppVet\" height=\"25\" width=\"200\">\n");
-	htmlBuffer.append("</tr>\n");
-	htmlBuffer.append("</td>\n");
-	htmlBuffer.append("</table>\n");
-	htmlBuffer.append("<br>\n");
-	
-	
-	
-	// Content
-	String apperianLogo = "../appvet_images/apperian.png";
-	htmlBuffer.append("<img src=\"" + apperianLogo + "\" alt=\"Apparian\" height=\"75\">\n");
-	htmlBuffer.append("<br>\n");
-	htmlBuffer.append("<h3>" + Properties.toolName + "</h3>\n");
-	htmlBuffer.append("<pre>\n");
-	htmlBuffer.append("File: \t\t" + fileName + "\n");
-	final Date date = new Date();
-	final SimpleDateFormat format = new SimpleDateFormat(
-		"yyyy-MM-dd' 'HH:mm:ss.SSSZ");
-	final String currentDate = format.format(date);
-	htmlBuffer.append("Date: \t\t" + currentDate + "\n\n");
-	if (reportStatus == ToolStatus.LOW) {
-	    htmlBuffer.append("Risk: \t\t<font color=\"green\">"
-		    + reportStatus.name() + "</font>\n");
-	    htmlBuffer.append(lowDescription);
-	} else if (reportStatus == ToolStatus.MODERATE) {
-	    htmlBuffer.append("Risk: \t\t<font color=\"orange\">"
-		    + reportStatus.name() + "</font>\n");
-	    htmlBuffer.append(moderateDescription);
-	} else if (reportStatus == ToolStatus.HIGH) {
-	    htmlBuffer.append("Risk: \t\t<font color=\"red\">"
-		    + reportStatus.name() + "</font>\n");
-	    htmlBuffer.append(highDescription);
-	} else {
-	    htmlBuffer.append("Status: \t<font color=\"red\">"
-		    + reportStatus.name() + "</font>\n");
-	    htmlBuffer.append(errorDescription);
+	public static String getHtmlReport(HttpServletResponse response,
+			String fileName, ToolStatus reportStatus, String report,
+			String lowDescription, String moderateDescription,
+			String highDescription, String errorDescription) {
+
+		String dhsLogoPath = null;
+		String appvetLogoPath = null;
+		String checkipaLogoPath = null;
+
+		String toolOS = System.getProperty("os.name");
+		if (toolOS.toUpperCase().indexOf("WIN") > -1) {
+			dhsLogoPath = "C:\\appvet_tools\\ios_checkipa_files\\images\\dhs.jpg";
+			appvetLogoPath = "C:\\appvet_tools\\ios_checkipa_files\\images\\appvet.png";
+			checkipaLogoPath = "C:\\appvet_tools\\ios_checkipa_files\\images\\apperian.png";
+		} else if (toolOS.toUpperCase().indexOf("NUX") > -1) {
+			dhsLogoPath = "/data/appvet_tools/ios_checkipa_files/images/dhs.jpg";
+			appvetLogoPath = "/data/appvet_tools/ios_checkipa_files/images/appvet.png";
+			checkipaLogoPath = "/data/appvet_tools/ios_checkipa_files/images/apperian.png";
+		}
+
+		StringBuffer htmlBuffer = new StringBuffer();
+		htmlBuffer.append("<HTML>\n");
+		htmlBuffer.append("<head>\n");
+		htmlBuffer.append("<style type=\"text/css\">\n");
+		htmlBuffer.append("h3 {font-family:arial;}\n");
+		htmlBuffer.append("h4 {font-family:arial;}\n");
+		htmlBuffer.append("p {font-family:arial;}\n");
+		htmlBuffer.append("</style>\n");
+		htmlBuffer.append("<title>" + Properties.toolName + "</title>\n");
+		htmlBuffer.append("</head>\n");
+		htmlBuffer.append("<body>\n");
+
+		// Carwash AppVet banner
+		htmlBuffer.append("<table style=\"background:white;width:100%\">\n");
+		htmlBuffer.append("<tr>\n");
+
+		htmlBuffer
+				.append("<td style=\"width:50%;padding:0px;margin:0px;\" align=\"left\"><img src=\""
+						+ dhsLogoPath
+						+ "\" alt=\"DHS logo\" style=\"height: 40px;\"></td>");
+		htmlBuffer
+				.append("<td style=\"width:50%;padding:0px;margin:0px;\" align=\"right\"><img src=\""
+						+ appvetLogoPath
+						+ "\" alt=\"AppVet logo\" style=\"height: 35px;\"></td>");
+
+		htmlBuffer.append("</tr>\n");
+		htmlBuffer.append("</td>\n");
+		htmlBuffer.append("</table>\n");
+		htmlBuffer.append("<br>\n");
+
+		// Content
+		htmlBuffer.append("<br><br><br><br><img src=\"" + checkipaLogoPath
+				+ "\" alt=\"Apperian\" height=\"75\">\n");
+		htmlBuffer.append("<br>\n");
+		htmlBuffer.append("<h3>" + Properties.toolName + "</h3>\n");
+		htmlBuffer.append("<pre>\n");
+		htmlBuffer.append("File: \t\t" + fileName + "\n");
+		final Date date = new Date();
+		final SimpleDateFormat format = new SimpleDateFormat(
+				"yyyy-MM-dd' 'HH:mm:ss.SSSZ");
+		final String currentDate = format.format(date);
+		htmlBuffer.append("Date: \t\t" + currentDate + "\n\n");
+		if (reportStatus == ToolStatus.LOW) {
+			htmlBuffer.append("Risk: \t\t<font color=\"green\">"
+					+ reportStatus.name() + "</font>\n");
+			htmlBuffer.append(lowDescription);
+		} else if (reportStatus == ToolStatus.MODERATE) {
+			htmlBuffer.append("Risk: \t\t<font color=\"orange\">"
+					+ reportStatus.name() + "</font>\n");
+			htmlBuffer.append(moderateDescription);
+		} else if (reportStatus == ToolStatus.HIGH) {
+			htmlBuffer.append("Risk: \t\t<font color=\"red\">"
+					+ reportStatus.name() + "</font>\n");
+			htmlBuffer.append(highDescription);
+		} else {
+			htmlBuffer.append("Status: \t<font color=\"red\">"
+					+ reportStatus.name() + "</font>\n");
+			htmlBuffer.append(errorDescription);
+		}
+		htmlBuffer.append("<h3>Details</h3>");
+		htmlBuffer.append(report);
+		htmlBuffer.append("</body>\n");
+		htmlBuffer.append("</HTML>\n");
+		return htmlBuffer.toString();
 	}
-	htmlBuffer.append("<hr>");
-	htmlBuffer.append("<h4>Details</h4>");
-	htmlBuffer.append(report);
-	htmlBuffer.append("</body>\n");
-	htmlBuffer.append("</HTML>\n");
-	return htmlBuffer.toString();
-    }
 
 }
