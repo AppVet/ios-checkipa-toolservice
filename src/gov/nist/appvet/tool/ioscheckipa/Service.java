@@ -72,7 +72,7 @@ public class Service extends HttpServlet {
 
 	protected void doPost(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
-		
+
 		// Get received HTTP parameters and file upload
 		FileItemFactory factory = new DiskFileItemFactory();
 		ServletFileUpload upload = new ServletFileUpload(factory);
@@ -119,22 +119,22 @@ public class Service extends HttpServlet {
 						"Invalid app file: " + fileItem.getName());
 				return;
 			}
-			
+
 			// Create app directory
 			appDirPath = Properties.TEMP_DIR + "/" + appId;
 			File appDir = new File(appDirPath);
 			if (!appDir.exists()) {
 				appDir.mkdir();
 			}
-			
+
 			// Create report paths
 			htmlFileReportPath = Properties.TEMP_DIR + "/" + appId + "/"
 					+ reportName + "." + Properties.reportFormat.toLowerCase();
 			pdfFileReportPath = Properties.TEMP_DIR + "/" + appId + "/"
 					+ reportName + ".pdf";
-			
+
 			appFilePath = Properties.TEMP_DIR + "/" + appId + "/" + fileName;
-			
+
 			if (!FileUtil.saveFileUpload(fileItem, appFilePath)) {
 				HttpUtil.sendHttp500(response, "Could not save uploaded file");
 				return;
@@ -143,20 +143,21 @@ public class Service extends HttpServlet {
 			HttpUtil.sendHttp400(response, "No app was received.");
 			return;
 		}
-		
+
 		// If asynchronous, send acknowledgement back to AppVet
 		if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 			HttpUtil.sendHttp202(response, "Received app " + appId
 					+ " for processing.");
 		}
-		
+
 		reportBuffer = new StringBuffer();
 
 		// Start processing app
 		log.debug("Executing checkIPA on app");
 		command = getCommand();
 		boolean succeeded = execute(command, reportBuffer);
-		log.debug("Finished execution checkIPA on app - succeeded: " + succeeded);
+		log.debug("Finished execution checkIPA on app - succeeded: "
+				+ succeeded);
 
 		if (!succeeded) {
 			log.error("Error detected: " + reportBuffer.toString());
@@ -166,22 +167,26 @@ public class Service extends HttpServlet {
 							fileName,
 							ToolStatus.ERROR,
 							reportBuffer.toString(),
-							"Description: \tApp does not contain Android MasterKey or ExtraField vulnerabilities.\n\n",
-							null,
-							"Description: \tApp contains Android MasterKey and/or ExtraField vulnerabilities.\n\n",
+							"Description: \tApp does not contain vulnerabilities.\n\n",
+							"Description: \tApp contains moderate vulnerabilities.\n\n",
+							"Description: \tApp contains high vulnerabilities.\n\n",
 							"Description: \tError or exception processing app.\n\n");
 			// Send report to AppVet
 			if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 				// Send report file in new HTTP Request to AppVet
-				boolean fileSaved = FileUtil.saveReport(errorReport, htmlFileReportPath);
+				boolean fileSaved = FileUtil.saveReport(errorReport,
+						htmlFileReportPath);
 				if (fileSaved) {
-					final StringBuffer reportBuffer = new StringBuffer();	
-					boolean htmlToPdfSuccessful = 
-							execute("wkhtmltopdf " + htmlFileReportPath + " " + pdfFileReportPath, reportBuffer);
+					final StringBuffer reportBuffer = new StringBuffer();
+					boolean htmlToPdfSuccessful = execute(Properties.htmlToPdfCommand + " " 
+							+ htmlFileReportPath + " " + pdfFileReportPath,
+							reportBuffer);
 					if (htmlToPdfSuccessful) {
-						ReportUtil.sendInNewHttpRequest(appId, pdfFileReportPath,ToolStatus.ERROR);
+						ReportUtil.sendInNewHttpRequest(appId,
+								pdfFileReportPath, ToolStatus.ERROR);
 					} else {
-						log.error("Error generating PDF file " + pdfFileReportPath);
+						log.error("Error generating PDF file "
+								+ pdfFileReportPath);
 					}
 				} else {
 					log.error("Error writing HTML report " + htmlFileReportPath);
@@ -194,7 +199,7 @@ public class Service extends HttpServlet {
 		ToolStatus reportStatus = analyzeReport(reportBuffer.toString());
 		log.debug("Result: " + reportStatus.name());
 		String reportContent = null;
-		
+
 		// Get report
 		if (Properties.reportFormat.equals(ReportFormat.HTML.name())) {
 			reportContent = ReportUtil
@@ -208,7 +213,7 @@ public class Service extends HttpServlet {
 							"Description: \tApp contains one or more high-severity issues.\n\n",
 							"Description: \tError or exception processing app.\n\n");
 		}
-		
+
 		// If report content is null or empty, stop processing
 		if (reportContent == null || reportContent.isEmpty()) {
 			log.error("Tool report is null or empty");
@@ -217,13 +222,16 @@ public class Service extends HttpServlet {
 		// Send report to AppVet
 		if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 			// Send report file in new HTTP Request to AppVet
-			boolean htmlFileSaved = FileUtil.saveReport(reportContent, htmlFileReportPath);
+			boolean htmlFileSaved = FileUtil.saveReport(reportContent,
+					htmlFileReportPath);
 			if (htmlFileSaved) {
-				final StringBuffer reportBuffer = new StringBuffer();	
-				boolean htmlToPdfSuccessful = 
-						execute("wkhtmltopdf " + htmlFileReportPath + " " + pdfFileReportPath, reportBuffer);
+				final StringBuffer reportBuffer = new StringBuffer();
+				boolean htmlToPdfSuccessful = execute(Properties.htmlToPdfCommand + " " 
+						+ htmlFileReportPath + " " + pdfFileReportPath,
+						reportBuffer);
 				if (htmlToPdfSuccessful) {
-					ReportUtil.sendInNewHttpRequest(appId, pdfFileReportPath, reportStatus);
+					ReportUtil.sendInNewHttpRequest(appId, pdfFileReportPath,
+							reportStatus);
 				} else {
 					log.error("Error generating PDF file " + pdfFileReportPath);
 				}
@@ -231,7 +239,7 @@ public class Service extends HttpServlet {
 				log.error("Error writing HTML report " + htmlFileReportPath);
 			}
 		}
-		
+
 		// Clean up
 		if (!Properties.keepApps) {
 			try {
@@ -241,7 +249,7 @@ public class Service extends HttpServlet {
 				log.error(ioe.getMessage());
 			}
 		}
-		
+
 		reportBuffer = null;
 		// Clean up
 		System.gc();
@@ -293,7 +301,8 @@ public class Service extends HttpServlet {
 
 	public String getCommand() {
 		// Get command from ToolProperties.xml file
-		String cmd1 = Properties.IOS_CHECKIPA_FILES_HOME + "/bin/" + Properties.command;
+		String cmd1 = Properties.IOS_CHECKIPA_FILES_HOME + "/bin/"
+				+ Properties.command;
 		String cmd2 = null;
 		if (cmd1.indexOf(Properties.APP_FILE_PATH) > -1) {
 			// Add app file path
@@ -394,7 +403,7 @@ public class Service extends HttpServlet {
 		private InputStream inputStream;
 		private StringBuffer output = new StringBuffer();
 		private static final String lineSeparator = System
-				.getProperty("line.separator");;
+				.getProperty("line.separator");
 
 		IOThreadHandler(InputStream inputStream) {
 			this.inputStream = inputStream;

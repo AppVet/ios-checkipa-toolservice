@@ -38,10 +38,6 @@ public class Properties {
     /** Github release version number. */
     public static final String version = "1.1";
 
-    /*
-     * CHANGE: Declare tool-specific environment variables. Refactor
-     * EXAMPLE_SERVICE_FILES_HOME to your environment variable name.
-     */
     public static String IOS_CHECKIPA_FILES_HOME = null;
     public static String LOG_DISPLAY_NAME = "CHECKIPA";
     public static final String APP_FILE_PATH = "[APP_FILE_PATH]";
@@ -55,6 +51,7 @@ public class Properties {
     public static String protocol = null;
     public static boolean keepApps = false;
     public static String command = null;
+    public static String htmlToPdfCommand = null;
     public static int commandTimeout = 0;
     public static String reportFormat = null;
     public static String serviceUrl = null;
@@ -76,13 +73,8 @@ public class Properties {
     public static String toolId = null;
     public static String appvetUsername = null;
     public static String appvetPassword = null;
-    /** DON'T CHANGE (END) **/
 
     static {
-	/* CHANGE: Loading statement */
-	//System.out.println("*** Starting iOS CheckIPA Service v" + version
-	//	+ " ***");
-//	String toolOS = System.getProperty("os.name");
 
 	JAVA_HOME = System.getenv("JAVA_HOME");
 	if (JAVA_HOME == null) {
@@ -95,12 +87,6 @@ public class Properties {
 	    System.err
 		    .println("Environment variable IOS_CHECKIPA_FILES_HOME not set.");
 	}
-
-	/* CHANGE (START): Check if tool exists */
-	
-	
-	
-	/* CHANGE (END): Check if tool exists */
 
 	TEMP_DIR = IOS_CHECKIPA_FILES_HOME + "/apps";
 
@@ -157,9 +143,9 @@ public class Properties {
 	command = xml.getXPathValue("/Tool/Command");
 	log.info("/Tool/Command: " + command);
 	
-	// Keep Apps
-	keepApps = new Boolean(xml.getXPathValue("/Tool/KeepApps")).booleanValue();
-	log.info("/Tool/KeepApps: " + keepApps);
+	// HtmlToPDF Command
+	htmlToPdfCommand = xml.getXPathValue("/Tool/HtmlToPdfCmd");
+	log.info("/Tool/HtmlToPdfCmd: " + htmlToPdfCommand);
 
 	// Command Timeout
 	String cmdTimeoutStr = xml.getXPathValue("/Tool/CommandTimeout");

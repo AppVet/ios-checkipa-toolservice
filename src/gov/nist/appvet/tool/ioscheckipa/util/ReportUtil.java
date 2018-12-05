@@ -169,7 +169,7 @@ public class ReportUtil {
 		htmlBuffer.append("<br><br><br><br><img src=\"" + checkipaLogoPath
 				+ "\" alt=\"Apperian\" height=\"75\">\n");
 		htmlBuffer.append("<br>\n");
-		htmlBuffer.append("<h3>" + Properties.toolName + "</h3>\n");
+		htmlBuffer.append("<h3>" + Properties.toolName + " Report</h3>\n");
 		htmlBuffer.append("<pre>\n");
 		htmlBuffer.append("File: \t\t" + fileName + "\n");
 		final Date date = new Date();
